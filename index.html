@@ -4877,6 +4877,18 @@ renderTodaysFocus();
 renderChannels();
 </script>
 
+<script type="module">
+import {
+  saveDashboardData,
+  getDashboardData,
+  listenDashboardRealtime
+} from './firebase.js';
+
+window.saveDashboardData = saveDashboardData;
+window.getDashboardData = getDashboardData;
+window.listenDashboardRealtime = listenDashboardRealtime;
+</script>
+  
 
 
 </body>
