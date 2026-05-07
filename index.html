@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -4751,5 +4752,49 @@ renderPurposeTaskLinks();
 renderTodaysFocus();
 renderChannels();
 </script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAZaSyDaFnKjCHDE36qkyEAzfgkYBWwLf218s",
+  authDomain: "lectroni-dashboard.firebaseapp.com",
+  projectId: "lectroni-dashboard",
+  storageBucket: "lectroni-dashboard.firebasestorage.app",
+  messagingSenderId: "683866587025",
+  appId: "1:683866587025:web:858404090ef35fa1f5e1b0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.saveDashboardData = async function(data) {
+  await setDoc(doc(db, "dashboard", "main"), data);
+  console.log("Data saved!");
+}
+
+window.loadDashboardData = async function() {
+  const docRef = doc(db, "dashboard", "main");
+
+  onSnapshot(docRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      console.log("Live update:", data);
+
+      if(window.renderDashboard){
+        window.renderDashboard(data);
+      }
+    }
+  });
+}
+</script>
+
 </body>
 </html>
