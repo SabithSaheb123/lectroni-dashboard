@@ -4379,11 +4379,25 @@ async function saveSpend() {
 }
 
 async function deleteSpend(id) {
-  customConfirm('This spend entry will be permanently removed.', 'Delete this spend entry?', () => {
-    state.spends = state.spends.filter(s => s.id !== id);
-   await save(); renderBudgets(); renderDashboard();
-    toast('Spend deleted');
-  });
+
+  customConfirm(
+    'This spend entry will be permanently removed.',
+    'Delete this spend entry?',
+    async () => {
+
+      state.spends = state.spends.filter(s => s.id !== id);
+
+      await save();
+
+      renderBudgets();
+
+      renderDashboard();
+
+      toast('Spend deleted');
+
+    }
+  );
+
 }
 
 // ============= PERFORMANCE =============
@@ -5030,9 +5044,10 @@ function resetData() {
 }
 
 // ============= INIT =============
+
 async function initApp() {
 
-  await load();
+  load();
 
   populateAssetDropdowns();
 
@@ -5052,7 +5067,82 @@ async function initApp() {
     };
 
     state.tasks = [
-      // your tasks here
+
+      {
+        id: uid(),
+        title: 'Set up Google Analytics 4 and Search Console for all 7 properties',
+        assetId: 'lectroni',
+        pillar: 'Analytics',
+        priority: 'critical',
+        status: 'todo',
+        due: future(7),
+        description: 'Foundation step. Need GA4 + GSC verified for every domain so we can measure baseline.',
+        proof: '',
+        estHours: 6,
+        actualHours: 0,
+        createdAt: todayISO()
+      },
+
+      {
+        id: uid(),
+        title: 'Audit existing Facebook & LinkedIn pages — list active vs dormant',
+        assetId: 'lectroni',
+        pillar: 'Social',
+        priority: 'important',
+        status: 'todo',
+        due: future(3),
+        description: 'Inventory all social handles across the 7 brands.',
+        proof: '',
+        estHours: 3,
+        actualHours: 0,
+        createdAt: todayISO()
+      },
+
+      {
+        id: uid(),
+        title: 'SEO audit — crawl errors, broken links, missing meta tags',
+        assetId: 'eiffel-shop',
+        pillar: 'SEO',
+        priority: 'important',
+        status: 'todo',
+        due: future(10),
+        description: 'Run Screaming Frog. Deliver report with prioritized fix list.',
+        proof: '',
+        estHours: 4,
+        actualHours: 0,
+        createdAt: todayISO()
+      },
+
+      {
+        id: uid(),
+        title: 'App Store Optimization — Torqd listing keywords, screenshots, description',
+        assetId: 'torqd',
+        pillar: 'SEO',
+        priority: 'routine',
+        status: 'todo',
+        due: future(14),
+        description: 'Both iOS and Google Play. Compare against 3 competitor apps.',
+        proof: '',
+        estHours: 5,
+        actualHours: 0,
+        createdAt: todayISO()
+      },
+
+      {
+        id: uid(),
+        title: 'Set up monthly KPI reporting template',
+        assetId: 'lectroni',
+        pillar: 'Analytics',
+        priority: 'routine',
+        status: 'todo',
+        due: future(20),
+        description: 'Standard format covering traffic, conversions, social, content output.',
+        proof: '',
+        estHours: 2,
+        actualHours: 0,
+        createdAt: todayISO()
+      }
+
     ];
 
     await save();
@@ -5060,6 +5150,20 @@ async function initApp() {
   }
 
   renderDashboard();
+
+  renderTasks();
+
+  renderLogs();
+
+  renderBudgets();
+
+  renderPerformance();
+
+  renderKPIs();
+
+  renderHub();
+
+  renderSettings();
 
   loadPurposeLogos();
 
@@ -5075,27 +5179,6 @@ async function initApp() {
 
 initApp();
 
-// Seed example data on first load (must run before we render counts)
-if (state.tasks.length === 0) {
-  const today = new Date();
-  const future = (days) => { const d = new Date(today); d.setDate(d.getDate()+days); return d.toISOString().split('T')[0]; };
-  state.tasks = [
-    { id: uid(), title: 'Set up Google Analytics 4 and Search Console for all 7 properties', assetId: 'lectroni', pillar: 'Analytics', priority: 'critical', status: 'todo', due: future(7), description: 'Foundation step. Need GA4 + GSC verified for every domain so we can measure baseline.', proof: '', estHours: 6, actualHours: 0, createdAt: todayISO() },
-    { id: uid(), title: 'Audit existing Facebook & LinkedIn pages — list active vs dormant', assetId: 'lectroni', pillar: 'Social', priority: 'important', status: 'todo', due: future(3), description: 'Inventory all social handles across the 7 brands.', proof: '', estHours: 3, actualHours: 0, createdAt: todayISO() },
-    { id: uid(), title: 'SEO audit — crawl errors, broken links, missing meta tags', assetId: 'eiffel-shop', pillar: 'SEO', priority: 'important', status: 'todo', due: future(10), description: 'Run Screaming Frog. Deliver report with prioritized fix list.', proof: '', estHours: 4, actualHours: 0, createdAt: todayISO() },
-    { id: uid(), title: 'App Store Optimization — Torqd listing keywords, screenshots, description', assetId: 'torqd', pillar: 'SEO', priority: 'routine', status: 'todo', due: future(14), description: 'Both iOS and Google Play. Compare against 3 competitor apps.', proof: '', estHours: 5, actualHours: 0, createdAt: todayISO() },
-    { id: uid(), title: 'Set up monthly KPI reporting template', assetId: 'lectroni', pillar: 'Analytics', priority: 'routine', status: 'todo', due: future(20), description: 'Standard format covering traffic, conversions, social, content output.', proof: '', estHours: 2, actualHours: 0, createdAt: todayISO() }
-  ];
-  await save();
-}
-
-// First-paint render — Purpose is the hero tab, so hydrate it last after seed data exists
-renderDashboard();
-loadPurposeLogos();
-loadJobEdits();
-renderPurposeTaskLinks();
-renderTodaysFocus();
-renderChannels();
 </script>
 
 <script type="module">
@@ -5112,19 +5195,34 @@ window.listenDashboardRealtime = listenDashboardRealtime;
 
 window.addEventListener('DOMContentLoaded', async () => {
 
-  // realtime updates
   listenDashboardRealtime((data) => {
+
+    if (!data) return;
 
     state = data;
 
     renderDashboard();
+
     renderTasks();
+
     renderLogs();
+
     renderBudgets();
+
     renderPerformance();
+
     renderKPIs();
+
     renderHub();
+
     renderSettings();
+
+    renderPurposeTaskLinks();
+
+    renderTodaysFocus();
+
+    renderChannels();
+
     populateAssetDropdowns();
 
     console.log("Realtime sync update");
