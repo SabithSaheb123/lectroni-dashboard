@@ -3165,70 +3165,70 @@ let state = {
 
 // ============= STORAGE =============
 async function save() {
+
   try {
 
-    // save locally
+    // save to local backup
     localStorage.setItem('lectroni-dashboard', JSON.stringify(state));
 
-    // save to firebase
-    await saveDashboardData(state);
-
-    console.log('Saved locally + Firebase');
+    // save to Firebase cloud
+    if (window.saveDashboardData) {
+      await window.saveDashboardData(state);
+      console.log("Saved to Firebase");
+    }
 
   } catch(e) {
+
     console.error('Save failed:', e);
+
   }
+
 }
 
 async function load() {
 
   try {
 
-    // LOAD FROM FIREBASE FIRST
-    const firebaseData = await getDashboardData();
+    // FIRST try Firebase
+    if (window.getDashboardData) {
 
-    if (firebaseData) {
+      const firebaseData = await window.getDashboardData();
 
-      state = { ...state, ...firebaseData };
+      if (firebaseData) {
 
-      // backup locally
-      localStorage.setItem(
-        'lectroni-dashboard',
-        JSON.stringify(state)
-      );
+        state = firebaseData;
 
-      console.log('Loaded from Firebase');
+        console.log("Loaded from Firebase");
 
-    } else {
+      } else {
 
-      // fallback local
-      const saved = localStorage.getItem('lectroni-dashboard');
+        // fallback localStorage
+        const saved = localStorage.getItem('lectroni-dashboard');
 
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        state = { ...state, ...parsed };
+        if (saved) {
+          state = JSON.parse(saved);
+        }
+
       }
 
-      console.log('Loaded from localStorage fallback');
     }
-
-    // DEFAULTS
-    if (!state.assets || state.assets.length === 0)
-      state.assets = [...DEFAULT_ASSETS];
-
-    if (!state.budgets) state.budgets = [];
-    if (!state.spends) state.spends = [];
-    if (!state.recurring) state.recurring = [];
-    if (!state.hub) state.hub = {};
-    if (!state.assetLogos) state.assetLogos = {};
-    if (!state.darkBgAssets) state.darkBgAssets = {};
-    if (!state.channels) state.channels = {};
 
   } catch(e) {
 
     console.error('Load failed:', e);
 
   }
+
+  renderDashboard();
+  renderTasks();
+  renderLogs();
+  renderBudgets();
+  renderPerformance();
+  renderKPIs();
+  renderHub();
+  renderSettings();
+  populateAssetDropdowns();
+
 }
 
 // LIVE FIREBASE SYNC
@@ -4003,14 +4003,21 @@ function closeTaskModal() {
   document.getElementById('task-modal').classList.remove('active');
 }
 
-function saveTask() {
+async function saveTask() {
+
   const title = document.getElementById('task-title').value.trim();
   const assetId = document.getElementById('task-asset').value;
-  if (!title || !assetId) { toast('Title and Asset are required'); return; }
+
+  if (!title || !assetId) {
+    toast('Title and Asset are required');
+    return;
+  }
 
   const id = document.getElementById('task-id').value;
+
   const data = {
-    title, assetId,
+    title,
+    assetId,
     pillar: document.getElementById('task-pillar').value,
     priority: document.getElementById('task-priority').value,
     status: document.getElementById('task-status').value,
@@ -4022,13 +4029,32 @@ function saveTask() {
   };
 
   if (id) {
+
     const t = state.tasks.find(x => x.id === id);
+
     Object.assign(t, data);
+
   } else {
-    state.tasks.push({ id: uid(), createdAt: todayISO(), ...data });
+
+    state.tasks.push({
+      id: uid(),
+      createdAt: todayISO(),
+      ...data
+    });
+
   }
-  save(); closeTaskModal(); renderTasks(); renderDashboard(); renderPurposeTaskLinks(); renderTodaysFocus();
+
+  await save();
+
+  closeTaskModal();
+
+  renderTasks();
+  renderDashboard();
+  renderPurposeTaskLinks();
+  renderTodaysFocus();
+
   toast(id ? 'Task updated' : 'Task added');
+
 }
 
 // ============= LOGS =============
@@ -4878,6 +4904,7 @@ renderChannels();
 </script>
 
 <script type="module">
+
 import {
   saveDashboardData,
   getDashboardData,
@@ -4887,6 +4914,30 @@ import {
 window.saveDashboardData = saveDashboardData;
 window.getDashboardData = getDashboardData;
 window.listenDashboardRealtime = listenDashboardRealtime;
+
+window.addEventListener('DOMContentLoaded', async () => {
+
+  // realtime updates
+  listenDashboardRealtime((data) => {
+
+    state = data;
+
+    renderDashboard();
+    renderTasks();
+    renderLogs();
+    renderBudgets();
+    renderPerformance();
+    renderKPIs();
+    renderHub();
+    renderSettings();
+    populateAssetDropdowns();
+
+    console.log("Realtime sync update");
+
+  });
+
+});
+
 </script>
   
 
