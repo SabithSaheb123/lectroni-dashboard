@@ -3086,12 +3086,23 @@ let state = {
 };
 
 // ============= STORAGE =============
-function save() {
-  try { localStorage.setItem('lectroni-dashboard', JSON.stringify(state)); }
-  catch(e) { console.error('Save failed:', e); }
+async function save() {
+  try {
+
+    // save locally
+    localStorage.setItem('lectroni-dashboard', JSON.stringify(state));
+
+    // save to firebase
+    await saveDashboardData(state);
+
+    console.log('Saved locally + Firebase');
+
+  } catch(e) {
+    console.error('Save failed:', e);
+  }
 }
 
-function load() {
+async function load() {
   try {
     const saved = localStorage.getItem('lectroni-dashboard');
     if (saved) {
@@ -3128,6 +3139,28 @@ function load() {
     }
   });
 }
+
+// LIVE FIREBASE SYNC
+loadDashboardData();
+
+window.renderDashboard = function(firebaseData) {
+
+  if (!firebaseData) return;
+
+  state = firebaseData;
+
+  renderDashboard();
+  renderTasks();
+  renderLogs();
+  renderBudgets();
+  renderPerformance();
+  renderKPIs();
+  renderHub();
+  renderSettings();
+  populateAssetDropdowns();
+
+  console.log('Realtime dashboard updated');
+};  
 
 // ============= UTILS =============
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
