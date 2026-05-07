@@ -10,7 +10,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyDaEnKjcHDIe36gkyEAzfgkYvBWWLfz18s",
   authDomain: "lectroni-dashboard.firebaseapp.com",
   projectId: "lectroni-dashboard",
   storageBucket: "lectroni-dashboard.appspot.com",
