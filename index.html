@@ -3103,51 +3103,62 @@ async function save() {
 }
 
 async function load() {
-  try {
-    const saved = localStorage.getItem('lectroni-dashboard');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      state = { ...state, ...parsed };
-      if (!state.assets || state.assets.length === 0) state.assets = [...DEFAULT_ASSETS];
-      if (!state.budgets) state.budgets = [];
-      if (!state.spends) state.spends = [];
-      if (!state.recurring) state.recurring = [];
-      if (!state.hub) state.hub = {};
-      if (!state.assetLogos) state.assetLogos = {};
-      if (!state.darkBgAssets) state.darkBgAssets = {};
-      if (!state.channels) state.channels = {};
-    }
-  } catch(e) { console.error('Load failed:', e); }
 
-  // Seed channels for any asset that has no channel array yet (covers both
-  // first-load AND existing users who upgrade to this version).
-  Object.keys(DEFAULT_CHANNELS).forEach(assetId => {
-    if (!state.channels[assetId]) {
-      state.channels[assetId] = DEFAULT_CHANNELS[assetId].map(c => ({ id: uid(), ...c }));
+  try {
+
+    // LOAD FROM FIREBASE FIRST
+    const firebaseData = await getDashboardData();
+
+    if (firebaseData) {
+
+      state = { ...state, ...firebaseData };
+
+      // backup locally
+      localStorage.setItem(
+        'lectroni-dashboard',
+        JSON.stringify(state)
+      );
+
+      console.log('Loaded from Firebase');
+
     } else {
-      // Existing user — backfill URLs into channels that match a default but have no URL yet.
-      // Match by type + name. If the user has edited the name or already entered a URL,
-      // we leave their data alone.
-      const defaults = DEFAULT_CHANNELS[assetId];
-      state.channels[assetId].forEach(existing => {
-        if (existing.url && existing.url.trim()) return; // user already has a URL — never overwrite
-        const match = defaults.find(d => d.type === existing.type && d.name === existing.name);
-        if (match && match.url) {
-          existing.url = match.url;
-        }
-      });
+
+      // fallback local
+      const saved = localStorage.getItem('lectroni-dashboard');
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        state = { ...state, ...parsed };
+      }
+
+      console.log('Loaded from localStorage fallback');
     }
-  });
+
+    // DEFAULTS
+    if (!state.assets || state.assets.length === 0)
+      state.assets = [...DEFAULT_ASSETS];
+
+    if (!state.budgets) state.budgets = [];
+    if (!state.spends) state.spends = [];
+    if (!state.recurring) state.recurring = [];
+    if (!state.hub) state.hub = {};
+    if (!state.assetLogos) state.assetLogos = {};
+    if (!state.darkBgAssets) state.darkBgAssets = {};
+    if (!state.channels) state.channels = {};
+
+  } catch(e) {
+
+    console.error('Load failed:', e);
+
+  }
 }
 
 // LIVE FIREBASE SYNC
-loadDashboardData();
-
-window.renderDashboard = function(firebaseData) {
+listenDashboardRealtime((firebaseData) => {
 
   if (!firebaseData) return;
 
-  state = firebaseData;
+  state = { ...state, ...firebaseData };
 
   renderDashboard();
   renderTasks();
@@ -3157,10 +3168,12 @@ window.renderDashboard = function(firebaseData) {
   renderKPIs();
   renderHub();
   renderSettings();
+
   populateAssetDropdowns();
 
   console.log('Realtime dashboard updated');
-};  
+
+}); 
 
 // ============= UTILS =============
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -4809,24 +4822,58 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 window.saveDashboardData = async function(data) {
-  await setDoc(doc(db, "dashboard", "main"), data);
-  console.log("Data saved!");
-}
 
-window.loadDashboardData = async function() {
+  try {
+
+    await setDoc(doc(db, "dashboard", "main"), data);
+
+    console.log("Saved to Firebase");
+
+  } catch(e) {
+
+    console.error("Firebase save failed:", e);
+
+  }
+
+};
+
+window.getDashboardData = async function() {
+
+  try {
+
+    const snap = await getDoc(doc(db, "dashboard", "main"));
+
+    if (snap.exists()) {
+      return snap.data();
+    }
+
+    return null;
+
+  } catch(e) {
+
+    console.error("Firebase load failed:", e);
+
+    return null;
+  }
+
+};
+
+window.listenDashboardRealtime = function(callback) {
+
   const docRef = doc(db, "dashboard", "main");
 
   onSnapshot(docRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.data();
-      console.log("Live update:", data);
 
-      if(window.renderDashboard){
-        window.renderDashboard(data);
-      }
+    if (snapshot.exists()) {
+
+      callback(snapshot.data());
+
     }
+
   });
-}
+
+};  
+  
 </script>
 
 </body>
