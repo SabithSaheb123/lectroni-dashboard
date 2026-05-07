@@ -3375,9 +3375,13 @@ function loadJobEdits() {
       const key = 'job-' + pageId + '-' + idx;
       const stored = localStorage.getItem(key);
       if (stored) li.textContent = stored;
-      li.addEventListener('blur', () => {
-        localStorage.setItem(key, li.textContent);
-      });
+li.addEventListener('blur', async () => {
+
+  localStorage.setItem(key, li.textContent);
+
+  await save();
+
+});
     });
     window._jobEditsLoaded = true;
   }
@@ -3389,14 +3393,26 @@ function toggleHubCard(headerEl) {
 }
 
 // ============= ROLE =============
-function setRole(role) {
+async function setRole(role) {
+
   state.role = role;
-  document.getElementById('role-manager').classList.toggle('active', role === 'manager');
-  document.getElementById('role-team').classList.toggle('active', role === 'team');
+
+  document.getElementById('role-manager')
+    .classList.toggle('active', role === 'manager');
+
+  document.getElementById('role-team')
+    .classList.toggle('active', role === 'team');
+
   const logAuthor = document.getElementById('log-author');
-  if (logAuthor) logAuthor.value = role === 'team' ? 'Team' : 'Manager';
+
+  if (logAuthor) {
+    logAuthor.value = role === 'team' ? 'Team' : 'Manager';
+  }
+
   applyRoleTabs();
-  save();
+
+  await save();
+
 }
 
 function applyRoleTabs() {
@@ -3732,7 +3748,7 @@ function addChannelRow(channel) {
   document.getElementById('channels-modal-rows').appendChild(row);
 }
 
-function saveChannelsModal() {
+async function saveChannelsModal() {
   const assetId = document.getElementById('channels-modal-asset-id').value;
   if (!assetId) return;
   const rows = document.querySelectorAll('#channels-modal-rows .channel-row');
@@ -3758,7 +3774,7 @@ function saveChannelsModal() {
   });
   if (!state.channels) state.channels = {};
   state.channels[assetId] = updated;
-  save();
+  await save();
   closeChannelsModal();
   renderChannels();
   toast('Channels updated');
@@ -3944,24 +3960,50 @@ function statusLabel(s) {
   return ({'todo':'To Do','in-progress':'In Progress','blocked':'Blocked','review':'Review','done':'Done'})[s];
 }
 
-function updateStatus(id, status) {
+async function updateStatus(id, status) {
+
   const t = state.tasks.find(x => x.id === id);
+
   if (t) {
+
     t.status = status;
-    if (status === 'done' && !t.completedAt) t.completedAt = todayISO();
-    save();
+
+    if (status === 'done' && !t.completedAt) {
+      t.completedAt = todayISO();
+    }
+
+    await save();
+
     renderTasks();
     renderDashboard();
+
     toast('Status updated');
+
   }
+
 }
 
-function deleteTask(id) {
-  customConfirm('This task will be permanently removed.', 'Delete this task?', () => {
-    state.tasks = state.tasks.filter(t => t.id !== id);
-    save(); renderTasks(); renderDashboard(); renderPurposeTaskLinks(); renderTodaysFocus();
-    toast('Task deleted');
-  });
+async function deleteTask(id) {
+
+  customConfirm(
+    'This task will be permanently removed.',
+    'Delete this task?',
+    async () => {
+
+      state.tasks = state.tasks.filter(t => t.id !== id);
+
+      await save();
+
+      renderTasks();
+      renderDashboard();
+      renderPurposeTaskLinks();
+      renderTodaysFocus();
+
+      toast('Task deleted');
+
+    }
+  );
+
 }
 
 function openTaskModal() {
@@ -4058,14 +4100,32 @@ async function saveTask() {
 }
 
 // ============= LOGS =============
-function postLog() {
+async function postLog() {
+
   const author = document.getElementById('log-author').value;
+
   const content = document.getElementById('log-content').value.trim();
-  if (!content) { toast('Write something first'); return; }
-  state.logs.unshift({ id: uid(), author, content, timestamp: new Date().toISOString() });
+
+  if (!content) {
+    toast('Write something first');
+    return;
+  }
+
+  state.logs.unshift({
+    id: uid(),
+    author,
+    content,
+    timestamp: new Date().toISOString()
+  });
+
   document.getElementById('log-content').value = '';
-  save(); renderLogs();
+
+  await save();
+
+  renderLogs();
+
   toast('Update posted');
+
 }
 
 function renderLogs() {
@@ -4092,12 +4152,24 @@ function renderLogs() {
   }).join('');
 }
 
-function deleteLog(id) {
-  customConfirm('This log entry will be permanently removed.', 'Delete this update?', () => {
-    state.logs = state.logs.filter(l => l.id !== id);
-    save(); renderLogs();
-    toast('Update deleted');
-  });
+async function deleteLog(id) {
+
+  customConfirm(
+    'This log entry will be permanently removed.',
+    'Delete this update?',
+    async () => {
+
+      state.logs = state.logs.filter(l => l.id !== id);
+
+      await save();
+
+      renderLogs();
+
+      toast('Update deleted');
+
+    }
+  );
+
 }
 
 // ============= BUDGETS =============
@@ -4224,22 +4296,49 @@ function closeBudgetModal() {
   document.getElementById('budget-modal').classList.remove('active');
 }
 
-function saveBudgets() {
+async function saveBudgets() {
+
   const assetId = document.getElementById('budget-asset').value;
   const month = document.getElementById('budget-month-input').value;
-  if (!assetId || !month) { toast('Asset and Month required'); return; }
+
+  if (!assetId || !month) {
+    toast('Asset and Month required');
+    return;
+  }
 
   document.querySelectorAll('.budget-input').forEach(input => {
+
     const channel = input.dataset.channel;
+
     const amount = parseFloat(input.value) || 0;
-    state.budgets = state.budgets.filter(b => !(b.assetId === assetId && b.month === month && b.channel === channel));
+
+    state.budgets = state.budgets.filter(
+      b => !(b.assetId === assetId && b.month === month && b.channel === channel)
+    );
+
     if (amount > 0) {
-      state.budgets.push({ id: uid(), assetId, month, channel, amount });
+
+      state.budgets.push({
+        id: uid(),
+        assetId,
+        month,
+        channel,
+        amount
+      });
+
     }
+
   });
 
-  save(); closeBudgetModal(); renderBudgets(); renderDashboard();
+  await save();
+
+  closeBudgetModal();
+
+  renderBudgets();
+  renderDashboard();
+
   toast('Budgets saved');
+
 }
 
 function openSpendModal() {
@@ -4257,7 +4356,7 @@ function closeSpendModal() {
   document.getElementById('spend-modal').classList.remove('active');
 }
 
-function saveSpend() {
+async function saveSpend() {
   const assetId = document.getElementById('spend-asset').value;
   const channel = document.getElementById('spend-channel').value;
   const week = document.getElementById('spend-week').value;
@@ -4275,14 +4374,14 @@ function saveSpend() {
     notes
   });
 
-  save(); closeSpendModal(); renderBudgets(); renderDashboard();
+  await save(); closeSpendModal(); renderBudgets(); renderDashboard();
   toast('Spend logged');
 }
 
-function deleteSpend(id) {
+async function deleteSpend(id) {
   customConfirm('This spend entry will be permanently removed.', 'Delete this spend entry?', () => {
     state.spends = state.spends.filter(s => s.id !== id);
-    save(); renderBudgets(); renderDashboard();
+   await save(); renderBudgets(); renderDashboard();
     toast('Spend deleted');
   });
 }
@@ -4390,14 +4489,25 @@ function closeKPIModal() {
   document.getElementById('kpi-modal').classList.remove('active');
 }
 
-function saveKPI() {
-  const assetId = document.getElementById('kpi-asset').value;
-  const month = document.getElementById('kpi-month-input').value;
-  if (!assetId || !month) { toast('Asset and Month required'); return; }
+async function saveKPI() {
 
-  state.kpis = state.kpis.filter(k => !(k.assetId === assetId && k.month === month));
+  const assetId = document.getElementById('kpi-asset').value;
+
+  const month = document.getElementById('kpi-month-input').value;
+
+  if (!assetId || !month) {
+    toast('Asset and Month required');
+    return;
+  }
+
+  state.kpis = state.kpis.filter(
+    k => !(k.assetId === assetId && k.month === month)
+  );
+
   state.kpis.push({
-    id: uid(), assetId, month,
+    id: uid(),
+    assetId,
+    month,
     traffic: parseInt(document.getElementById('kpi-traffic').value) || null,
     leads: parseInt(document.getElementById('kpi-leads').value) || null,
     sales: parseInt(document.getElementById('kpi-sales').value) || null,
@@ -4407,8 +4517,16 @@ function saveKPI() {
     revenue: parseFloat(document.getElementById('kpi-revenue').value) || null,
     notes: document.getElementById('kpi-notes').value
   });
-  save(); closeKPIModal(); renderKPIs(); renderDashboard();
+
+  await save();
+
+  closeKPIModal();
+
+  renderKPIs();
+  renderDashboard();
+
   toast('KPI snapshot saved');
+
 }
 
 function renderKPIs() {
@@ -4461,12 +4579,25 @@ function renderKPIs() {
   `;
 }
 
-function deleteKPI(id) {
-  customConfirm('This KPI snapshot will be permanently removed.', 'Delete this snapshot?', () => {
-    state.kpis = state.kpis.filter(k => k.id !== id);
-    save(); renderKPIs(); renderDashboard();
-    toast('Snapshot deleted');
-  });
+async function deleteKPI(id) {
+
+  customConfirm(
+    'This KPI snapshot will be permanently removed.',
+    'Delete this snapshot?',
+    async () => {
+
+      state.kpis = state.kpis.filter(k => k.id !== id);
+
+      await save();
+
+      renderKPIs();
+      renderDashboard();
+
+      toast('Snapshot deleted');
+
+    }
+  );
+
 }
 
 // ============= ASSET HUB =============
@@ -4525,8 +4656,10 @@ function closeHubModal() {
   document.getElementById('hub-modal').classList.remove('active');
 }
 
-function saveHub() {
+async function saveHub() {
+
   const assetId = document.getElementById('hub-asset-id').value;
+
   state.hub[assetId] = {
     website: document.getElementById('hub-website').value.trim(),
     facebook: document.getElementById('hub-facebook').value.trim(),
@@ -4539,8 +4672,15 @@ function saveHub() {
     meta: document.getElementById('hub-meta').value.trim(),
     notes: document.getElementById('hub-notes').value.trim()
   };
-  save(); closeHubModal(); renderHub();
+
+  await save();
+
+  closeHubModal();
+
+  renderHub();
+
   toast('Links saved');
+
 }
 
 // ============= RECURRING TASKS =============
@@ -4559,7 +4699,7 @@ function closeRecurringModal() {
   document.getElementById('recurring-modal').classList.remove('active');
 }
 
-function saveRecurring() {
+async function saveRecurring() {
   const title = document.getElementById('recur-title').value.trim();
   const assetId = document.getElementById('recur-asset').value;
   if (!title || !assetId) { toast('Title and Asset are required'); return; }
@@ -4575,22 +4715,34 @@ function saveRecurring() {
     description: document.getElementById('recur-description').value.trim(),
     lastGenerated: null
   });
-  save(); closeRecurringModal(); renderSettings();
+  await save(); closeRecurringModal(); renderSettings();
   // Generate any due tasks immediately
-  generateRecurringTasks();
+  await generateRecurringTasks();
   toast('Template saved');
 }
 
-function deleteRecurring(id) {
-  customConfirm('Stop generating tasks from this template? Existing tasks will not be affected.', 'Remove template?', () => {
-    state.recurring = state.recurring.filter(r => r.id !== id);
-    save(); renderSettings();
-    toast('Template removed');
-  });
+async function deleteRecurring(id) {
+
+  customConfirm(
+    'Stop generating tasks from this template? Existing tasks will not be affected.',
+    'Remove template?',
+    async () => {
+
+      state.recurring = state.recurring.filter(r => r.id !== id);
+
+      await save();
+
+      renderSettings();
+
+      toast('Template removed');
+
+    }
+  );
+
 }
 
 // Generate recurring tasks if due
-function generateRecurringTasks() {
+async function generateRecurringTasks() {
   const today = new Date();
   const todayStr = todayISO();
   let generated = 0;
@@ -4657,7 +4809,7 @@ function generateRecurringTasks() {
   });
 
   if (generated > 0) {
-    save();
+   await save();
     toast(`${generated} recurring task${generated > 1 ? 's' : ''} generated`);
   }
 }
@@ -4732,10 +4884,10 @@ function uploadLogo(assetId, event) {
     return;
   }
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     if (!state.assetLogos) state.assetLogos = {};
     state.assetLogos[assetId] = e.target.result;
-    save();
+    await save();
     renderSettings();
     renderDashboard();
     toast('Logo uploaded');
@@ -4746,26 +4898,29 @@ function uploadLogo(assetId, event) {
 }
 
 function removeCustomLogo(assetId) {
-  customConfirm('Remove this custom logo? The asset will fall back to its built-in logo (if any) or initials placeholder.', 'Reset logo?', () => {
+  customConfirm('Remove this custom logo? The asset will fall back to its built-in logo (if any) or initials placeholder.', 'Reset logo?', async () => {
     if (state.assetLogos) delete state.assetLogos[assetId];
-    save();
+    await save();
     renderSettings();
     renderDashboard();
     toast('Logo reset');
   });
 }
 
-function toggleDarkBg(assetId, isDark) {
+async function toggleDarkBg(assetId, isDark) {
   if (!state.darkBgAssets) state.darkBgAssets = {};
   state.darkBgAssets[assetId] = isDark;
-  save();
+  await save();
   renderSettings();
   renderDashboard();
 }
 
-function updateAsset(id, field, value) {
+async function updateAsset(id, field, value) {
   const a = state.assets.find(x => x.id === id);
-  if (a) { a[field] = value; save(); }
+  if (a) {
+    a[field] = value;
+    await save();
+  }
 }
 
 function addAsset() {
@@ -4779,20 +4934,20 @@ function closeAddAsset() {
   document.getElementById('prompt-modal').classList.remove('active');
 }
 
-function confirmAddAsset() {
+async function confirmAddAsset() {
   const name = document.getElementById('prompt-name').value.trim();
   const type = document.getElementById('prompt-type').value.trim() || 'Other';
   if (!name) { toast('Asset name is required'); return; }
   state.assets.push({ id: uid(), name, type, notes: '' });
-  save(); renderSettings(); populateAssetDropdowns(); renderDashboard();
+  await save(); renderSettings(); populateAssetDropdowns(); renderDashboard();
   closeAddAsset();
   toast('Asset added');
 }
 
 function deleteAsset(id) {
-  customConfirm('This asset will be removed. Tasks, KPIs, budgets, and spend linked to it will remain but show as "Unknown".', 'Remove this asset?', () => {
+  customConfirm('This asset will be removed. Tasks, KPIs, budgets, and spend linked to it will remain but show as "Unknown".', 'Remove this asset?', async () => {
     state.assets = state.assets.filter(a => a.id !== id);
-    save(); renderSettings(); populateAssetDropdowns(); renderDashboard();
+    await save(); renderSettings(); populateAssetDropdowns(); renderDashboard();
     toast('Asset removed');
   });
 }
@@ -4849,13 +5004,13 @@ function importData(e) {
   reader.onload = (ev) => {
     try {
       const imported = JSON.parse(ev.target.result);
-      customConfirm('This will replace all current data with the imported file.', 'Import and replace?', () => {
+      customConfirm('This will replace all current data with the imported file.', 'Import and replace?', async () => {
         state = imported;
         if (!state.budgets) state.budgets = [];
         if (!state.spends) state.spends = [];
         if (!state.recurring) state.recurring = [];
         if (!state.hub) state.hub = {};
-        save();
+        await save();
         renderDashboard(); renderTasks(); renderLogs(); renderBudgets();
         renderPerformance(); renderKPIs(); renderHub(); renderSettings();
         populateAssetDropdowns();
@@ -4875,10 +5030,50 @@ function resetData() {
 }
 
 // ============= INIT =============
-load();
-populateAssetDropdowns();
-generateRecurringTasks();
-applyRoleTabs();
+async function initApp() {
+
+  await load();
+
+  populateAssetDropdowns();
+
+  await generateRecurringTasks();
+
+  applyRoleTabs();
+
+  // Seed example data on first load
+  if (state.tasks.length === 0) {
+
+    const today = new Date();
+
+    const future = (days) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    };
+
+    state.tasks = [
+      // your tasks here
+    ];
+
+    await save();
+
+  }
+
+  renderDashboard();
+
+  loadPurposeLogos();
+
+  loadJobEdits();
+
+  renderPurposeTaskLinks();
+
+  renderTodaysFocus();
+
+  renderChannels();
+
+}
+
+initApp();
 
 // Seed example data on first load (must run before we render counts)
 if (state.tasks.length === 0) {
@@ -4891,7 +5086,7 @@ if (state.tasks.length === 0) {
     { id: uid(), title: 'App Store Optimization — Torqd listing keywords, screenshots, description', assetId: 'torqd', pillar: 'SEO', priority: 'routine', status: 'todo', due: future(14), description: 'Both iOS and Google Play. Compare against 3 competitor apps.', proof: '', estHours: 5, actualHours: 0, createdAt: todayISO() },
     { id: uid(), title: 'Set up monthly KPI reporting template', assetId: 'lectroni', pillar: 'Analytics', priority: 'routine', status: 'todo', due: future(20), description: 'Standard format covering traffic, conversions, social, content output.', proof: '', estHours: 2, actualHours: 0, createdAt: todayISO() }
   ];
-  save();
+  await save();
 }
 
 // First-paint render — Purpose is the hero tab, so hydrate it last after seed data exists
