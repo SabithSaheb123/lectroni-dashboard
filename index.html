@@ -1439,6 +1439,84 @@ tr.done .task-title { text-decoration: line-through; color: var(--ink-3); }
 }
 /* ============= END PURPOSE → TASKS BRIDGE ============= */
 
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAZaSyDaFnKjCHDE36qkyEAzfgkYBWwLf218s",
+  authDomain: "lectroni-dashboard.firebaseapp.com",
+  projectId: "lectroni-dashboard",
+  storageBucket: "lectroni-dashboard.firebasestorage.app",
+  messagingSenderId: "683866587025",
+  appId: "1:683866587025:web:858404090ef35fa1f5e1b0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.saveDashboardData = async function(data) {
+
+  try {
+
+    await setDoc(doc(db, "dashboard", "main"), data);
+
+    console.log("Saved to Firebase");
+
+  } catch(e) {
+
+    console.error("Firebase save failed:", e);
+
+  }
+
+};
+
+window.getDashboardData = async function() {
+
+  try {
+
+    const snap = await getDoc(doc(db, "dashboard", "main"));
+
+    if (snap.exists()) {
+      return snap.data();
+    }
+
+    return null;
+
+  } catch(e) {
+
+    console.error("Firebase load failed:", e);
+
+    return null;
+  }
+
+};
+
+window.listenDashboardRealtime = function(callback) {
+
+  const docRef = doc(db, "dashboard", "main");
+
+  onSnapshot(docRef, (snapshot) => {
+
+    if (snapshot.exists()) {
+
+      callback(snapshot.data());
+
+    }
+
+  });
+
+};  
+  
+</script>  
+
 /* ============= CHANNELS (sub-assets per asset) ============= */
 #tab-purpose .channels-section {
   background: var(--surface);
@@ -4799,82 +4877,7 @@ renderTodaysFocus();
 renderChannels();
 </script>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAZaSyDaFnKjCHDE36qkyEAzfgkYBWwLf218s",
-  authDomain: "lectroni-dashboard.firebaseapp.com",
-  projectId: "lectroni-dashboard",
-  storageBucket: "lectroni-dashboard.firebasestorage.app",
-  messagingSenderId: "683866587025",
-  appId: "1:683866587025:web:858404090ef35fa1f5e1b0"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.saveDashboardData = async function(data) {
-
-  try {
-
-    await setDoc(doc(db, "dashboard", "main"), data);
-
-    console.log("Saved to Firebase");
-
-  } catch(e) {
-
-    console.error("Firebase save failed:", e);
-
-  }
-
-};
-
-window.getDashboardData = async function() {
-
-  try {
-
-    const snap = await getDoc(doc(db, "dashboard", "main"));
-
-    if (snap.exists()) {
-      return snap.data();
-    }
-
-    return null;
-
-  } catch(e) {
-
-    console.error("Firebase load failed:", e);
-
-    return null;
-  }
-
-};
-
-window.listenDashboardRealtime = function(callback) {
-
-  const docRef = doc(db, "dashboard", "main");
-
-  onSnapshot(docRef, (snapshot) => {
-
-    if (snapshot.exists()) {
-
-      callback(snapshot.data());
-
-    }
-
-  });
-
-};  
-  
-</script>
 
 </body>
 </html>
