@@ -5043,111 +5043,23 @@ function resetData() {
   });
 }
 
-// ============= INIT =============
+// ===============================
+// UPDATED INIT
+// ===============================
 
 async function initApp() {
 
-  load();
+  await load();
+
+  if (!state.channels) {
+    state.channels = {};
+  }
 
   populateAssetDropdowns();
 
   await generateRecurringTasks();
 
   applyRoleTabs();
-
-  // Seed example data on first load
-  if (state.tasks.length === 0) {
-
-    const today = new Date();
-
-    const future = (days) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() + days);
-      return d.toISOString().split('T')[0];
-    };
-
-    state.tasks = [
-
-      {
-        id: uid(),
-        title: 'Set up Google Analytics 4 and Search Console for all 7 properties',
-        assetId: 'lectroni',
-        pillar: 'Analytics',
-        priority: 'critical',
-        status: 'todo',
-        due: future(7),
-        description: 'Foundation step. Need GA4 + GSC verified for every domain so we can measure baseline.',
-        proof: '',
-        estHours: 6,
-        actualHours: 0,
-        createdAt: todayISO()
-      },
-
-      {
-        id: uid(),
-        title: 'Audit existing Facebook & LinkedIn pages — list active vs dormant',
-        assetId: 'lectroni',
-        pillar: 'Social',
-        priority: 'important',
-        status: 'todo',
-        due: future(3),
-        description: 'Inventory all social handles across the 7 brands.',
-        proof: '',
-        estHours: 3,
-        actualHours: 0,
-        createdAt: todayISO()
-      },
-
-      {
-        id: uid(),
-        title: 'SEO audit — crawl errors, broken links, missing meta tags',
-        assetId: 'eiffel-shop',
-        pillar: 'SEO',
-        priority: 'important',
-        status: 'todo',
-        due: future(10),
-        description: 'Run Screaming Frog. Deliver report with prioritized fix list.',
-        proof: '',
-        estHours: 4,
-        actualHours: 0,
-        createdAt: todayISO()
-      },
-
-      {
-        id: uid(),
-        title: 'App Store Optimization — Torqd listing keywords, screenshots, description',
-        assetId: 'torqd',
-        pillar: 'SEO',
-        priority: 'routine',
-        status: 'todo',
-        due: future(14),
-        description: 'Both iOS and Google Play. Compare against 3 competitor apps.',
-        proof: '',
-        estHours: 5,
-        actualHours: 0,
-        createdAt: todayISO()
-      },
-
-      {
-        id: uid(),
-        title: 'Set up monthly KPI reporting template',
-        assetId: 'lectroni',
-        pillar: 'Analytics',
-        priority: 'routine',
-        status: 'todo',
-        due: future(20),
-        description: 'Standard format covering traffic, conversions, social, content output.',
-        proof: '',
-        estHours: 2,
-        actualHours: 0,
-        createdAt: todayISO()
-      }
-
-    ];
-
-    await save();
-
-  }
 
   renderDashboard();
 
@@ -5199,19 +5111,31 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     if (!data) return;
 
-   state = {
-  ...state,
-  ...data,
-  channels: data.channels || {},
-  tasks: data.tasks || [],
-  logs: data.logs || [],
-  kpis: data.kpis || [],
-  budgets: data.budgets || [],
-  spends: data.spends || [],
-  recurring: data.recurring || [],
-  hub: data.hub || {},
-  assets: data.assets || state.assets
-};
+    state = {
+
+      ...state,
+
+      ...data,
+
+      channels: data.channels || {},
+
+      tasks: data.tasks || [],
+
+      logs: data.logs || [],
+
+      kpis: data.kpis || [],
+
+      budgets: data.budgets || [],
+
+      spends: data.spends || [],
+
+      recurring: data.recurring || [],
+
+      hub: data.hub || {},
+
+      assets: data.assets || state.assets
+
+    };
 
     renderDashboard();
 
@@ -5257,6 +5181,71 @@ window.addChannelRow = addChannelRow;
 
 </script>
   
+
+<!-- CHANNELS MODAL -->
+
+<div class="modal-overlay" id="channels-modal">
+
+  <div class="modal" style="max-width:1000px;">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+
+      <div>
+        <h2 style="margin:0;">Channel Editor</h2>
+
+        <p style="margin-top:6px;color:var(--ink-3);font-size:13px;">
+          Manage channels for this asset
+        </p>
+      </div>
+
+      <button class="btn-ghost" onclick="closeChannelsModal()">
+        ✕
+      </button>
+
+    </div>
+
+    <input type="hidden" id="channels-modal-asset-id">
+
+    <div style="margin-bottom:18px;">
+
+      <div style="font-size:13px;color:var(--ink-3);margin-bottom:6px;">
+        Editing Asset
+      </div>
+
+      <div id="channels-modal-asset"
+           style="font-size:20px;font-weight:700;">
+      </div>
+
+    </div>
+
+    <div id="channels-modal-rows"
+         style="display:flex;flex-direction:column;gap:12px;">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:24px;">
+
+      <button class="btn-secondary"
+              onclick="addChannelRow()">
+        + Add Channel
+      </button>
+
+      <div style="flex:1;"></div>
+
+      <button class="btn-ghost"
+              onclick="closeChannelsModal()">
+        Cancel
+      </button>
+
+      <button class="btn-primary"
+              onclick="saveChannelsModal()">
+        Save Channels
+      </button>
+
+    </div>
+
+  </div>
+
+</div>  
 
 
 </body>
