@@ -5246,11 +5246,21 @@ initApp();
 
 </script>
 
-<script>
+<script type="module">
 
-window.addEventListener('load', async () => {
+import {
+  saveDashboardData,
+  getDashboardData,
+  listenDashboardRealtime
+} from './firebase.js';
 
-  window.listenDashboardRealtime((data) => {
+window.saveDashboardData = saveDashboardData;
+window.getDashboardData = getDashboardData;
+window.listenDashboardRealtime = listenDashboardRealtime;
+
+window.addEventListener('DOMContentLoaded', async () => {
+
+  listenDashboardRealtime((data) => {
 
     if (!data) return;
 
@@ -5310,7 +5320,7 @@ window.addEventListener('load', async () => {
 
 });
 
-// ===== EXPOSE FUNCTIONS =====
+  // ===== EXPOSE FUNCTIONS TO WINDOW =====
 
 window.renderChannels = renderChannels;
 
