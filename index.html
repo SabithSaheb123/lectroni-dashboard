@@ -3083,7 +3083,7 @@ const DEFAULT_ASSETS = [
 // A channel is a digital surface belonging to an asset — a website, social page,
 // marketplace listing, etc. Status is one of: live, dormant, planned, archived.
 // Type drives the icon and colour treatment in the channel chip.
-const CHANNEL_TYPES = {
+var CHANNEL_TYPES = {
   website:    { label: 'Website',    icon: 'globe' },
   linkedin:   { label: 'LinkedIn',   icon: 'linkedin' },
   facebook:   { label: 'Facebook',   icon: 'facebook' },
@@ -3105,7 +3105,7 @@ const CHANNEL_TYPES = {
 // Default seeded channels per asset. Most marked Planned on purpose so the team
 // sees what still needs to be built, not a fake-Live inventory.
 // URLs are best-guess defaults — the user can correct any wrong ones in the modal.
-const DEFAULT_CHANNELS = {
+var DEFAULT_CHANNELS = {
   'lectroni': [
     { type: 'website',  name: 'lectroni.com.au',     url: 'https://lectroni.com.au',                       status: 'live' },
     { type: 'linkedin', name: 'Lectroni LinkedIn',   url: 'https://www.linkedin.com/company/lectroni',     status: 'live' },
@@ -3231,27 +3231,7 @@ async function load() {
 
 }
 
-// LIVE FIREBASE SYNC
-listenDashboardRealtime((firebaseData) => {
 
-  if (!firebaseData) return;
-
-  state = { ...state, ...firebaseData };
-
-  renderDashboard();
-  renderTasks();
-  renderLogs();
-  renderBudgets();
-  renderPerformance();
-  renderKPIs();
-  renderHub();
-  renderSettings();
-
-  populateAssetDropdowns();
-
-  console.log('Realtime dashboard updated');
-
-}); 
 
 // ============= UTILS =============
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -3573,7 +3553,7 @@ function countTasksForAsset(id) {
 // ============= CHANNELS — render + edit =============
 
 // Compact icon set for channel chips (inline SVG, lucide-style)
-const CHANNEL_ICONS = {
+var CHANNEL_ICONS = {
   globe:        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg>',
   linkedin:     '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.95v5.66H9.36V9h3.41v1.56h.05a3.74 3.74 0 013.37-1.85c3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43A2.06 2.06 0 113.28 5.37a2.06 2.06 0 012.06 2.06zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>',
   facebook:     '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.5-3.89 3.78-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.89h-2.33v6.99A10 10 0 0022 12z"/></svg>',
@@ -3668,10 +3648,6 @@ function renderChannels() {
   });
 }
 
-// Tiny HTML escaper for user-entered names/urls
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-}
 
 // ============= Channels editor modal =============
 function openChannelsModal(assetId) {
